@@ -5,19 +5,19 @@ var tracker;
 var facePos;
 var users=[];
 
-	var socket = io.connect('http://45.55.48.195:8080/');
+	// var socket = io.connect('http://45.55.48.195:8080/');
 
-	socket.on('connect', function() {
-		console.log("Connected");
+	// socket.on('connect', function() {
+	// 	console.log("Connected");
 
-				//socket.emit('hello',"blah blahb blah");
-				//console.log("sent hello");
+	// 			//socket.emit('hello',"blah blahb blah");
+	// 			//console.log("sent hello");
 
-			});
+	// 		});
 
-	socket.on('goodbye',function(data) {
-		console.log("Server said goodbye: " + data);
-	});
+	// socket.on('goodbye',function(data) {
+	// 	console.log("Server said goodbye: " + data);
+	// });
 
 
 function setup() {
@@ -27,27 +27,27 @@ function setup() {
   	capture = createCapture({
   		video: {
   			mandatory: {
-  				minWidth: 640,
-  				minHeight: 360
+  				minWidth: 320,
+  				minHeight: 180
   			}
   		}
   	});
-  	createCanvas(1280, 720);
+  	createCanvas(320, 180);
   	//console.log("sia"+capture.size)
-  	capture.size(windowWidth, windowHeight);
+  	capture.size(320, 180);
   	capture.id('myFace');
   	console.log(select('#myFace'));
   	capture.hide();
 	tracker = new clm.tracker();
 	tracker.init(pModel);
 	tracker.start(capture.elt);
-  	for (var i=0; i<100; i++) {
+  	for (var i=0; i<50; i++) {
   		movers.push(new Brush());
   	}
   }
 
   function draw() {
-
+background(255,20);
   	capture.loadPixels();
   	if(capture.pixels!=0){
 facePos = tracker.getCurrentPosition();
@@ -96,17 +96,17 @@ Brush.prototype.update=function(){
 	this.oldPosY=this.loc.y;
 	this.posX=int(randomGaussian()*2);
 	this.posY=int(randomGaussian()*2);
-	if (facePos){
+	/*if (facePos){
 	this.direction=createVector(randomGaussian(facePos[62][0],400)-this.oldPosX,randomGaussian(facePos[62][1],400)-this.oldPosY);
 	this.acceleration=this.direction.normalize();
 	
-}else{
+}else{*/
 	this.acceleration.x=this.posX;
 	this.acceleration.y=this.posY;
-}
-	this.velocity.add(this.acceleration.normalize());
+//if no emotions then normalize the acceleration if happy then add acceleration without normalizing
+	this.velocity.add(this.acceleration);
 	this.loc.add(this.velocity);
-	this.velocity.limit(10);
+	this.velocity.limit(5);
 }
 
 Brush.prototype.boundaries=function(){
@@ -127,7 +127,7 @@ Brush.prototype.boundaries=function(){
 }
 Brush.prototype.displays=function(){
 
-	socket.emit('brush', {oldPosXU:this.oldPosX, oldPosYU:this.oldPosY, locXU:this.loc.x, locYU})
+	//socket.emit('brush', {oldPosXU:this.oldPosX, oldPosYU:this.oldPosY, locXU:this.loc.x, locYU})
 //this.pix=int(this.loc.x)+int(this.loc.y)*int(width);
 this.pix = int(this.loc.y) * int(capture.width)*4 + int(this.loc.x)*4;
 // console.log("loc"+this.pix);
@@ -139,9 +139,9 @@ this.g=capture.pixels[int(this.pix+1)];
 this.b=capture.pixels[int(this.pix+2)];
 //this.g=green(capture.pixels[int(this.pix)]);
 // this.b=blue(capture.pixels[int(this.pix)]);
-//stroke(this.r,this.g,this.b);
-stroke(0);
-strokeWeight(random(1,7));
+stroke(this.r,this.g,this.b);
+//stroke(0);
+strokeWeight(random(1,4));
 line(this.oldPosX,this.oldPosY,this.loc.x,this.loc.y);
 
 }
