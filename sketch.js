@@ -195,8 +195,28 @@ this.b=capture.pixels[int(this.pix+2)];
 // this.b=blue(capture.pixels[int(this.pix)]);
 //stroke(this.r,this.g,this.b);
 stroke(0);
+
+
+if(emotionList[3]==1){
+
+	strokeWeight(1);
+var hair=map(noise(0),0,1,3,5);
+   
+    push();
+    translate(this.loc.x, this.loc.y);
+    for (var i=0; i<8; i++) {
+      line(-hair, -hair, hair, hair);
+      rotate(random(0, 2*PI));
+    }
+    pop();
+
+}else if(emotionList[2]==1){
+	noFill();
+	strokeWeight(1);
+	ellipse(this.loc.x,this.loc.y,random(5,9),random(5,9));
+}else{
 strokeWeight(random(1,4));
 line(this.oldPosX,this.oldPosY,this.loc.x,this.loc.y);
-
+}
 }
 
