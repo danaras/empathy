@@ -1,105 +1,96 @@
-window.addEventListener('load',function(){
+var Sketch = {};
+
+window.addEventListener('load', function() {
 	// These help with cross-browser functionality (shim)
-window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+	window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
+	// The video element on the page to display the webcam
+	var video = document.getElementById('thevideo');
 
-
-// The video element on the page to display the webcam
-var video = document.getElementById('thevideo');
-
-// if we have the method
-if (navigator.getUserMedia) {
-	navigator.getUserMedia({video: true}, function(stream) {
+	// if we have the method
+	if (navigator.getUserMedia) {
+		navigator.getUserMedia({video: true}, function(stream) {
 			video.src = window.URL.createObjectURL(stream) || stream;
 			video.play();
-		}, function(error) {alert("Failure " + error.code);});
-}		
-document.getElementById('thevideo').style.visibility = "hidden";
+		}, 
+		function(error) {
+			alert("Failure " + error.code);
+		});
+	}		
 
-var usersList=[];
-var socket = io.connect('https://45.55.48.195:8080/');
+	document.getElementById('thevideo').style.visibility = "hidden";
 
+	var usersList=[];
+	var socket = io.connect('https://45.55.48.195:8080/');
+	var userEmotion = [];
 
-var userEmotion = [];
+	socket.on('connect', function() {
+		console.log("Connected");
+	});
 
-socket.on('connect', function() {
-	console.log("Connected");
-});
-
-socket.on('userslist', function (data) {
-	console.log(data);
-	usersList=data;
-	for(var i = 0; i <data.length; i++) {
-	document.getElementById("avatars").innerHTML = document.getElementById("avatars").innerHTML+'<div id="'+data[i]+'"></div>';
-	console.log(document.getElementById("avatars").innerHTML);
-
-}
-});
-
-
-socket.on('goodbye',function(data) {
-	console.log("Server said goodbye: " + data);
-});
-socket.on('emotion',function(data){
-
-	for (var i = 0; i < usersList.length; i++) {
-		if (userEmotion[i] == null) {
-			userEmotion[i] = [];
+	socket.on('userslist', function (data) {
+		console.log(data);
+		usersList = data;
+		for(var i = 0; i <data.length; i++) {
+			document.getElementById("avatars").innerHTML = document.getElementById("avatars").innerHTML+'<div id="'+data[i]+'"></div>';
+			console.log(document.getElementById("avatars").innerHTML);
 		}
+	});
 
-		userEmotion[i][0] = usersList[i];
+	socket.on('goodbye',function(data) {
+		console.log("Server said goodbye: " + data);
+	});
 
-		if (userEmotion[i][0] == data.id) {
-			userEmotion[i][1] == data.emotion;
-		}
-	} 
-});
+	socket.on('emotion',function(data){
+		for (var i = 0; i < usersList.length; i++) {
+			if (userEmotion[i] == null) {
+				userEmotion[i] = [];
+			}
 
+			userEmotion[i][0] = usersList[i];
 
-//setting up tracker
-var tracker=new clm.tracker();
-tracker.init(pModel);
-tracker.start(video);
-//initializing emotion classifier
-var ec = new emotionClassifier();
-	ec.init(emotionModel);
-if (video){
-var	facePos = tracker.getCurrentParameters();
-}
+			if (userEmotion[i][0] == data.id) {
+				userEmotion[i][1] == data.emotion;
+			}
+		} 
+	});
 
-if(facePos){
-var er = ec.meanPredict(facePos);
-	if (er) {
-		for (var i = 0;i < er.length;i++) {
-	
-			if (er[3].value > 0.8) {
-				socket.emit('emotion',"happy");
+	// Setting up tracker
+	Sketch.tracker = new clm.tracker();
+	Sketch.tracker.init(pModel);
+	Sketch.tracker.start(video);
+	// i nitializing emotion classifier
+	Sketch.ec = new emotionClassifier();
+	Sketch.ec.init(emotionModel);
 
-			} else if (er[0].value > 0.3) {
-				socket.emit('emotion',"angry");
-				
-			} else if (er[1].value > 0.4) {
-				socket.emit('emotion',"sad");
-				
-			} else if (er[2].value > 0.9) {
-				socket.emit('emotion',"surprised");
-		
-			} else {
-				socket.emit('emotion',"no emotion");
-		
+	if (video) {
+		var facePos = Sketch.tracker.getCurrentParameters();
+		if (facePos) {
+			var er = Sketch.ec.meanPredict(facePos);
+			if (er) {
+				for (var i = 0;i < er.length;i++) {
+			
+					if (er[3].value > 0.8) {
+						socket.emit('emotion',"happy");
+					} else if (er[0].value > 0.3) {
+						socket.emit('emotion',"angry");
+					} else if (er[1].value > 0.4) {
+						socket.emit('emotion',"sad");
+					} else if (er[2].value > 0.9) {
+						socket.emit('emotion',"surprised");
+					} else {
+						socket.emit('emotion',"no emotion");
+					}
+				}
 			}
 		}
 	}
-}
-
-
-
 });
-var movers=[];
+
+var movers = [];
 
 function setup() {
-
 	background(255);
 
 	createCanvas(320, 240);
