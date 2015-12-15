@@ -6,13 +6,13 @@ window.addEventListener('load', function() {
 	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
 	// The video element on the page to display the webcam
-	var video = document.getElementById('thevideo');
+	Sketch.video = document.getElementById('thevideo');
 
 	// if we have the method
 	if (navigator.getUserMedia) {
-		navigator.getUserMedia({video: true}, function(stream) {
-			video.src = window.URL.createObjectURL(stream) || stream;
-			video.play();
+		navigator.getUserMedia({ video: true }, function(stream) {
+			Sketch.video.src = window.URL.createObjectURL(stream) || stream;
+			Sketch.video.play();
 		}, 
 		function(error) {
 			alert("Failure " + error.code);
@@ -59,33 +59,10 @@ window.addEventListener('load', function() {
 	// Setting up tracker
 	Sketch.tracker = new clm.tracker();
 	Sketch.tracker.init(pModel);
-	Sketch.tracker.start(video);
+	Sketch.tracker.start(Sketch.video);
 	// i nitializing emotion classifier
 	Sketch.ec = new emotionClassifier();
 	Sketch.ec.init(emotionModel);
-
-	if (video) {
-		var facePos = Sketch.tracker.getCurrentParameters();
-		if (facePos) {
-			var er = Sketch.ec.meanPredict(facePos);
-			if (er) {
-				for (var i = 0;i < er.length;i++) {
-			
-					if (er[3].value > 0.8) {
-						socket.emit('emotion',"happy");
-					} else if (er[0].value > 0.3) {
-						socket.emit('emotion',"angry");
-					} else if (er[1].value > 0.4) {
-						socket.emit('emotion',"sad");
-					} else if (er[2].value > 0.9) {
-						socket.emit('emotion',"surprised");
-					} else {
-						socket.emit('emotion',"no emotion");
-					}
-				}
-			}
-		}
-	}
 });
 
 var movers = [];
@@ -102,7 +79,29 @@ function setup() {
 
 function draw() {
 
-	background(255,20);
+	background(255, 20);
+
+	if (Sketch.video) {
+		var facePos = Sketch.tracker.getCurrentParameters();
+		if (facePos) {
+			var er = Sketch.ec.meanPredict(facePos);
+			if (er) {
+				for (var i = 0;i < er.length;i++) {
+					if (er[3].value > 0.8) {
+						socket.emit('emotion',"happy");
+					} else if (er[0].value > 0.3) {
+						socket.emit('emotion',"angry");
+					} else if (er[1].value > 0.4) {
+						socket.emit('emotion',"sad");
+					} else if (er[2].value > 0.9) {
+						socket.emit('emotion',"surprised");
+					} else {
+						socket.emit('emotion',"no emotion");
+					}
+				}
+			}
+		}
+	}
 
   	for (var i=0; i<movers.length; i++) {
   		movers[i].update();
