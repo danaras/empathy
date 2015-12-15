@@ -56,13 +56,14 @@ io.sockets.on('connection',
 		users[users.length]=socket.id;
 		io.emit('userslist',users);
 		console.log(users);
-		console.log(typeof(users));
+		//console.log(typeof(users));
 
 		console.log("We have a new client: " + socket.id);
 		
 																																																																																																																																																																																																																																																																																																																																																																																																													
 
 		socket.on('emotion', function(data) {
+			console.log("emotion:");
 			io.emit('emotion', {emotion:data, id:socket.id});
 		});
 

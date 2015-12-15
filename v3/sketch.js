@@ -1,5 +1,44 @@
 var Sketch = {};
 
+var socket = io.connect('https://45.55.48.195:8080/');
+var usersList = [];
+
+Sketch.userEmotion = [];
+
+socket.on('connect', function() {
+	console.log("Connected");
+});
+
+socket.on('userslist', function (data) {
+	console.log(data);
+	usersList = data;
+	for (var i = 0; i < data.length; i++) {
+		document.getElementById("avatars").innerHTML = document.getElementById("avatars").innerHTML+'<div id="'+data[i]+'"></div>';
+		console.log(document.getElementById("avatars").innerHTML);
+		createParticle(data[i], i * 100);
+	}
+});
+
+socket.on('goodbye',function(data) {
+	console.log("Server said goodbye: " + data);
+});
+
+socket.on('emotion',function(data){
+	console.log("emotion received");
+	for (var i = 0; i < usersList.length; i++) {
+		if (Sketch.userEmotion[i] == null) {
+			Sketch.userEmotion[i] = {};
+		}
+
+		Sketch.userEmotion[i].userList = usersList[i];
+
+		if (Sketch.userEmotion[i].userList == data.id) {
+			Sketch.userEmotion[i].emotion = data.emotion;
+		}
+	} 
+	console.log(Sketch.userEmotion);
+});
+
 window.addEventListener('load', function() {
 	// These help with cross-browser functionality (shim)
 	window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
@@ -20,42 +59,7 @@ window.addEventListener('load', function() {
 	}		
 
 	document.getElementById('thevideo').style.visibility = "hidden";
-
-	var usersList=[];
-	var socket = io.connect('https://45.55.48.195:8080/');
-	var userEmotion = [];
-
-	socket.on('connect', function() {
-		console.log("Connected");
-	});
-
-	socket.on('userslist', function (data) {
-		console.log(data);
-		usersList = data;
-		for(var i = 0; i <data.length; i++) {
-			document.getElementById("avatars").innerHTML = document.getElementById("avatars").innerHTML+'<div id="'+data[i]+'"></div>';
-			console.log(document.getElementById("avatars").innerHTML);
-		}
-	});
-
-	socket.on('goodbye',function(data) {
-		console.log("Server said goodbye: " + data);
-	});
-
-	socket.on('emotion',function(data){
-		for (var i = 0; i < usersList.length; i++) {
-			if (userEmotion[i] == null) {
-				userEmotion[i] = [];
-			}
-
-			userEmotion[i][0] = usersList[i];
-
-			if (userEmotion[i][0] == data.id) {
-				userEmotion[i][1] == data.emotion;
-			}
-		} 
-	});
-
+	
 	// Setting up tracker
 	Sketch.tracker = new clm.tracker();
 	Sketch.tracker.init(pModel);
@@ -65,16 +69,23 @@ window.addEventListener('load', function() {
 	Sketch.ec.init(emotionModel);
 });
 
-var movers = [];
+function createParticle(id, offset) {
+	if (Sketch.movers == null) {
+		Sketch.movers = {};
+	}
+	Sketch.movers[id] = {};
+	Sketch.movers[id].brushes = [];
+	for (var i = 0; i < 50; i++) {
+		var brush = new Brush();
+		brush.loc = createVector(width/2 + offset,height/2 + offset);
+		Sketch.movers[id].brushes.push(brush);
+	}
+}
 
 function setup() {
 	background(255);
 
-	createCanvas(320, 240);
-
-	for (var i = 0; i < 50; i++) {
-		movers.push(new Brush());
-	}
+	createCanvas(1280, 720);
 }
 
 function draw() {
@@ -82,18 +93,20 @@ function draw() {
 	background(255, 20);
 
 	if (Sketch.video) {
-		var facePos = Sketch.tracker.getCurrentParameters();
-		if (facePos) {
-			var er = Sketch.ec.meanPredict(facePos);
-			if (er) {
-				for (var i = 0;i < er.length;i++) {
-					if (er[3].value > 0.8) {
+		Sketch.facePos = Sketch.tracker.getCurrentParameters();
+		if (Sketch.facePos) {
+			Sketch.er = Sketch.ec.meanPredict(Sketch.facePos);
+			if (Sketch.er) {
+				//console.log("er true");
+				for (var i = 0;i < Sketch.er.length;i++) {
+					if (Sketch.er[3].value > 0.8) {
+						//console.log("happy");
 						socket.emit('emotion',"happy");
-					} else if (er[0].value > 0.3) {
+					} else if (Sketch.er[0].value > 0.3) {
 						socket.emit('emotion',"angry");
-					} else if (er[1].value > 0.4) {
+					} else if (Sketch.er[1].value > 0.4) {
 						socket.emit('emotion',"sad");
-					} else if (er[2].value > 0.9) {
+					} else if (Sketch.er[2].value > 0.9) {
 						socket.emit('emotion',"surprised");
 					} else {
 						socket.emit('emotion',"no emotion");
@@ -103,35 +116,41 @@ function draw() {
 		}
 	}
 
-  	for (var i=0; i<movers.length; i++) {
-  		movers[i].update();
-  		movers[i].boundaries();
-		movers[i].displays();
+	if (Sketch.movers) {
+		for (var key in Sketch.movers) {
+			var mover = Sketch.movers[key];
+			var brushes = mover.brushes;
+		  	for (var j = 0; j < brushes.length; j++) {
+	  			brushes[j].update();
+		  		brushes[j].boundaries();
+				brushes[j].displays();
+			}
+		}
 	}
 }
 var limited;
 
 var Brush = function(){
-	this.posX=0;  
-	this.loc=createVector(width/2,height/2);
+	this.posX = 0;  
+	this.loc = createVector(width/2,height/2);
 
-	this.velocity=createVector(0,0);
-	this.acceleration=createVector(this.posX,this.posY);
-	this.generator=0;
+	this.velocity = createVector(0,0);
+	this.acceleration = createVector(this.posX,this.posY);
+	this.generator = 0;
 
-	this.stroke=0;
+	this.stroke = 0;
 	this.oldPosX = this.loc.x;
 	this.oldPosY = this.loc.y;
 
 
 }
 
-Brush.prototype.update=function(){
+Brush.prototype.update = function(){
 
-	this.oldPosX=this.loc.x;
-	this.oldPosY=this.loc.y;
-	this.posX=int(randomGaussian()*2);
-	this.posY=int(randomGaussian()*2);
+	this.oldPosX = this.loc.x;
+	this.oldPosY = this.loc.y;
+	this.posX = int(randomGaussian()*2);
+	this.posY = int(randomGaussian()*2);
 	/*if (facePos){
 	this.direction=createVector(randomGaussian(facePos[62][0],400)-this.oldPosX,randomGaussian(facePos[62][1],400)-this.oldPosY);
 	this.acceleration=this.direction.normalize();
@@ -162,10 +181,10 @@ console.log("surprised");
 		limited =7;
 console.log("happy");
 }else{*/
-	console.log("no emotions detected");
-	this.acceleration.x=this.posX;
-	this.acceleration.y=this.posY;
-	limited =4;
+	//console.log("no emotions detected");
+	this.acceleration.x = this.posX;
+	this.acceleration.y =  this.posY;
+	limited = 4;
 //}
 
 	this.velocity.add(this.acceleration);
