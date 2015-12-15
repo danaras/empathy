@@ -3,6 +3,8 @@ window.addEventListener('load',function(){
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
+
+
 // The video element on the page to display the webcam
 var video = document.getElementById('thevideo');
 
@@ -18,7 +20,7 @@ document.getElementById('thevideo').style.visibility = "hidden";
 var usersList=[];
 var socket = io.connect('https://45.55.48.195:8080/');
 
-var movers=[];
+
 var userEmotion = [];
 
 socket.on('connect', function() {
@@ -92,6 +94,10 @@ var er = ec.meanPredict(facePos);
 }
 
 
+
+});
+var movers=[];
+
 function setup() {
 
 	background(255);
@@ -101,7 +107,7 @@ function setup() {
 	for (var i = 0; i < 50; i++) {
 		movers.push(new Brush());
 	}
-};
+}
 
 function draw() {
 
@@ -113,11 +119,10 @@ function draw() {
 		movers[i].displays();
 	}
 }
-
 var limited;
 
 var Brush = function(){
-	this.posX=0;n    
+	this.posX=0;  
 	this.loc=createVector(width/2,height/2);
 
 	this.velocity=createVector(0,0);
@@ -203,9 +208,9 @@ this.pix = int(this.loc.y) * int(width)*4 + int(this.loc.x)*4;
 // console.log("R"+capture.pixels[this.pix+1]);
 // console.log("g"+capture.pixels[this.pix+2]);
 // console.log("b"+capture.pixels[this.pix+3]);
-this.r=capture.pixels[int(this.pix)];
-this.g=capture.pixels[int(this.pix+1)];
-this.b=capture.pixels[int(this.pix+2)];
+// this.r=capture.pixels[int(this.pix)];
+// this.g=capture.pixels[int(this.pix+1)];
+// this.b=capture.pixels[int(this.pix+2)];
 //this.g=green(capture.pixels[int(this.pix)]);
 // this.b=blue(capture.pixels[int(this.pix)]);
 //stroke(this.r,this.g,this.b);
@@ -239,5 +244,5 @@ line(this.oldPosX,this.oldPosY,this.loc.x,this.loc.y);
 
 
 
-});
+
 
