@@ -1,19 +1,14 @@
-// Use the http module: http://nodejs.org/api/http.html
-var http = require('http');
-var fs = require('fs');
+var https = require('https');
+var fs = require('fs'); // Using the filesystem module
 var url =  require('url');
 
-// http://nodejs.org/api/http.html#http_event_request
+var options = {
+  key: fs.readFileSync('my-key.pem'),
+  cert: fs.readFileSync('my-cert.pem')
+};
+
 function handleIt(req, res) {
-	console.log("The URL is: " + req.url);
-
-	//req is an IncominMessage: http://nodejs.org/api/http.html#http_http_incomingmessage
-	//res is a ServerResponse: http://nodejs.org/api/http.html#http_class_http_serverresponse
-	//res.writeHead(200, {'Content-Type': 'text/html'});
-	//res.end('<html><body><b>Hello World</b></body></html>\n');
-
 	var parsedUrl = url.parse(req.url);
-	console.log("They asked for " + parsedUrl.pathname);
 
 	var path = parsedUrl.pathname;
 	if (path == "/") {
@@ -39,18 +34,14 @@ function handleIt(req, res) {
 	console.log("Got a request " + req.url);
 }
 
+var httpServer = https.createServer(options, handleIt);
+httpServer.listen(8080);
 
-
-// Call the createServer method, passing in an anonymous callback function that will be called when a request is made
-var httpServer = http.createServer(handleIt);
-
-// Tell that server to listen on port 8081
-httpServer.listen(8080);  
 
 console.log('Server listening on port 8080');
 
 //////////////////////////
-var clients = [];
+	var users=[];
 
 // WebSocket Portion
 // WebSockets work with the HTTP server
@@ -62,6 +53,10 @@ io.sockets.on('connection',
 	// We are given a websocket object in our function
 	function (socket) {
 	
+		users[users.length]=socket.id;
+		io.emit('userslist',users);
+		console.log(users);
+		console.log(typeof(users));
 
 		console.log("We have a new client: " + socket.id);
 		
@@ -76,8 +71,8 @@ io.sockets.on('connection',
 			clients.push(data);
 		});
 
-		socket.on('drawing', function(data) {
-			io.sockets.emit("drawing", data);
+		socket.on('emotion', function(data) {
+			io.sockets.emit('emotion', data);
 		});
 	}
 );

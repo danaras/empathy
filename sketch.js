@@ -8,21 +8,19 @@ var emotionList=[0,0,0,0];
 var limited;
 var ec;
 var er;
-	// var socket = io.connect('http://45.55.48.195:8080/');
+var socket = io.connect('http://45.55.48.195:8080/');
+var myCanvas
+socket.on('connect', function() {
+	console.log("Connected");
+});
 
-	// socket.on('connect', function() {
-	// 	console.log("Connected");
+socket.on('goodbye',function(data) {
+	console.log("Server said goodbye: " + data);
+});
 
-	// 			//socket.emit('hello',"blah blahb blah");
-	// 			//console.log("sent hello");
+socket.on('emotion',function(data){
 
-	// 		});
-
-	// socket.on('goodbye',function(data) {
-	// 	console.log("Server said goodbye: " + data);
-	// });
-
-
+});
 function setup() {
   	//createCanvas(windowWidth, windowHeight);
   	background(255);
@@ -58,20 +56,24 @@ er = ec.meanPredict(facePos);
 					
 							if (er[3].value > 0.8) {
 								emotionList[3]=1;
+								socket.emit('emotion',"happy");
 							} else {
 								emotionList[3]=0;
 							}
 							if (er[0].value > 0.3) {
+								socket.emit('emotion',"angry");
 								emotionList[0]=1;
 							} else {
 								emotionList[0]=0;
 							}
 							if (er[1].value > 0.4) {
+								socket.emit('emotion',"sad");
 								emotionList[1]=1;
 							} else {
 								emotionList[1]=0;
 							}
 							if (er[2].value > 0.9) {
+								socket.emit('emotion',"surprised");
 								emotionList[2]=1;
 							} else {
 								emotionList[2]=0;
@@ -193,8 +195,8 @@ this.g=capture.pixels[int(this.pix+1)];
 this.b=capture.pixels[int(this.pix+2)];
 //this.g=green(capture.pixels[int(this.pix)]);
 // this.b=blue(capture.pixels[int(this.pix)]);
-//stroke(this.r,this.g,this.b);
-stroke(0);
+stroke(this.r,this.g,this.b);
+//stroke(0);
 
 
 if(emotionList[3]==1){
