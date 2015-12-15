@@ -41,7 +41,9 @@ httpServer.listen(8080);
 console.log('Server listening on port 8080');
 
 //////////////////////////
-	var users=[];
+var users = [];
+var colors = [];
+
 
 // WebSocket Portion
 // WebSockets work with the HTTP server
@@ -52,18 +54,35 @@ var io = require('socket.io').listen(httpServer);
 io.sockets.on('connection', 
 	// We are given a websocket object in our function
 	function (socket) {
-	
+		
+		if (colors[users.length]==null){
+			colors[users.length]={};
+			colors[users.length].user = socket.id;
+		}
+		
 		users[users.length]=socket.id;
+		
 		io.emit('userslist',users);
 		console.log(users);
 		//console.log(typeof(users));
 
 		console.log("We have a new client: " + socket.id);
 		
+		socket.on('color', function(data){
+			for (var i = 0; i < users.length; i++){
+				if (socket.id == colors[i].user){
+					colors[i].red = data.red;
+					colors[i].green = data.green;
+					colors[i].blue = data.blue;
+				}
+			}
+			io.emit('color', colors);
+			console.log(data.red);
+		});
 																																																																																																																																																																																																																																																																																																																																																																																																													
 
 		socket.on('emotion', function(data) {
-			console.log("emotion:");
+			//console.log("emotion:");
 			io.emit('emotion', {emotion:data, id:socket.id});
 		});
 
@@ -76,7 +95,15 @@ io.sockets.on('connection',
 					console.log(socket.id + " disconnected");
 					console.log(users)
 				}
+
 			}
+
+			for (var i = colors.length - 1; i >= 0; i--) {
+				if (colors[i].user == socket.id ){
+					colors.splice(i, 1);
+				}
+			}
+
 		io.emit('disconnect',socket.id);
 		});
 
